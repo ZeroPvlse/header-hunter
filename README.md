@@ -12,7 +12,7 @@ It lets you easily craft HTTP requests with custom headers, send them to any web
 -   Send requests with custom body data
 -   View full response: status, headers, body, and timeline
 -   Keyboard shortcuts for speed
--   Runs locally—no data leaves your machine
+-   Runs locally. No data leaves your machine
 
 ---
 
