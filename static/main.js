@@ -5,7 +5,6 @@ let isResizing = false;
 let startX = 0;
 let startWidths = [];
 
-// Initialize resizable panels
 function initResizers() {
 	const resizers = document.querySelectorAll(".resizer");
 	const panels = document.querySelectorAll(".panel");
@@ -29,7 +28,6 @@ function initResizers() {
 		const container = document.querySelector(".main");
 		const containerWidth = container.getBoundingClientRect().width;
 
-		// Simple 3-panel resize logic
 		const leftPanel = panels[0];
 		const middlePanel = panels[1];
 		const rightPanel = panels[2];
@@ -39,7 +37,7 @@ function initResizers() {
 			Math.min(containerWidth * 0.6, startWidths[0] + deltaX)
 		);
 		const rightWidth = Math.max(300, startWidths[2] - deltaX);
-		const middleWidth = containerWidth - leftWidth - rightWidth - 16; // Account for gaps
+		const middleWidth = containerWidth - leftWidth - rightWidth - 16;
 
 		if (middleWidth > 200) {
 			leftPanel.style.flex = `0 0 ${leftWidth}px`;
@@ -57,40 +55,28 @@ function initResizers() {
 	});
 }
 
-// Keyboard shortcuts
 document.addEventListener("keydown", (e) => {
-	// Ctrl+Enter: Send request
 	if (e.ctrlKey && e.key === "Enter") {
 		e.preventDefault();
 		sendRequest();
-	}
-	// Ctrl+L: Focus URL
-	else if (e.ctrlKey && e.key === "l") {
+	} else if (e.ctrlKey && e.key === "l") {
 		e.preventDefault();
 		document.getElementById("url").focus();
 		document.getElementById("url").select();
-	}
-	// Ctrl+B: Focus body
-	else if (e.ctrlKey && e.key === "b") {
+	} else if (e.ctrlKey && e.key === "b") {
 		e.preventDefault();
 		document.getElementById("body").focus();
-	}
-	// Ctrl+H: Add custom header
-	else if (e.ctrlKey && e.key === "h") {
+	} else if (e.ctrlKey && e.key === "h") {
 		e.preventDefault();
 		showHeaderTab(
 			document.querySelector(".header-tab:nth-child(2)"),
 			"custom"
 		);
 		addCustomHeader();
-	}
-	// Ctrl+Shift+C: Clear all headers
-	else if (e.ctrlKey && e.shiftKey && e.key === "C") {
+	} else if (e.ctrlKey && e.shiftKey && e.key === "C") {
 		e.preventDefault();
 		clearAllHeaders();
-	}
-	// ?: Show shortcuts
-	else if (e.key === "?" && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+	} else if (e.key === "?" && !e.ctrlKey && !e.shiftKey && !e.altKey) {
 		e.preventDefault();
 		toggleShortcuts();
 	}
@@ -106,7 +92,6 @@ function toggleShortcuts() {
 	}, 3000);
 }
 
-// Header tab switching
 function showHeaderTab(tab, type) {
 	document
 		.querySelectorAll(".header-tab")
@@ -120,7 +105,6 @@ function showHeaderTab(tab, type) {
 	currentHeaderTab = type;
 }
 
-// Custom headers
 function addCustomHeader() {
 	const container = document.getElementById("custom-headers-container");
 	const headerDiv = document.createElement("div");
@@ -132,7 +116,6 @@ function addCustomHeader() {
             `;
 	container.appendChild(headerDiv);
 
-	// Focus the first input
 	headerDiv.querySelector("input").focus();
 }
 
@@ -140,7 +123,6 @@ function removeCustomHeader(btn) {
 	btn.parentElement.remove();
 }
 
-// Preset header management
 document.querySelectorAll(".header-checkbox").forEach((checkbox) => {
 	checkbox.addEventListener("change", (e) => {
 		const input = e.target.parentElement.querySelector(".header-value");
@@ -196,7 +178,6 @@ function clearAllHeaders() {
 		checkbox.dispatchEvent(new Event("change"));
 	});
 
-	// Clear custom headers
 	document.getElementById("custom-headers-container").innerHTML = "";
 }
 
@@ -224,7 +205,6 @@ async function sendRequest() {
 
 	const headers = {};
 
-	// Collect preset headers
 	document
 		.querySelectorAll(".header-checkbox:checked")
 		.forEach((checkbox) => {
@@ -236,7 +216,6 @@ async function sendRequest() {
 			}
 		});
 
-	// Collect custom headers
 	document.querySelectorAll(".custom-header").forEach((row) => {
 		const inputs = row.querySelectorAll("input");
 		const name = inputs[0].value.trim();
@@ -254,25 +233,20 @@ async function sendRequest() {
 
 	const startTime = Date.now();
 	try {
-		const options = {
-			method,
-			headers,
-			mode: "cors",
-		};
-
-		if (body && ["POST", "PUT", "PATCH"].includes(method)) {
-			options.body = body;
-		}
-
-		const response = await fetch(url, options);
-		const responseText = await response.text();
+		// Send to Flask backend instead of direct fetch
+		const response = await fetch("/api/send", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ method, url, body, headers }),
+		});
+		const data = await response.json();
 		const duration = Date.now() - startTime;
 
 		lastResponse = {
-			status: response.status,
-			statusText: response.statusText,
-			headers: Object.fromEntries(response.headers.entries()),
-			body: responseText,
+			status: data.status,
+			statusText: data.statusText,
+			headers: data.headers,
+			body: data.body,
 			duration,
 			url,
 			method,
@@ -280,8 +254,8 @@ async function sendRequest() {
 			timestamp: new Date().toISOString(),
 		};
 
-		statusEl.textContent = `${response.status} ${response.statusText} • ${duration}ms • ${responseText.length} bytes`;
-		statusEl.style.color = response.status >= 400 ? "#f85149" : "#238636";
+		statusEl.textContent = `${data.status} ${data.statusText} • ${duration}ms • ${data.body.length} bytes`;
+		statusEl.style.color = data.status >= 400 ? "#f85149" : "#238636";
 		updateResponseDisplay();
 	} catch (error) {
 		const duration = Date.now() - startTime;
@@ -329,7 +303,6 @@ function updateResponseDisplay() {
 				contentType = " (JSON)";
 			} catch {
 				try {
-					// Try to detect XML
 					if (bodyContent.trim().startsWith("<")) {
 						contentType = " (XML/HTML)";
 					}
@@ -411,7 +384,6 @@ function updateResponseDisplay() {
 	}
 }
 
-// Method change handler
 document.getElementById("method").addEventListener("change", (e) => {
 	const method = e.target.value;
 	const contentTypeCheckbox = document.getElementById("content-type");
@@ -423,12 +395,10 @@ document.getElementById("method").addEventListener("change", (e) => {
 		contentTypeCheckbox.dispatchEvent(new Event("change"));
 		acceptCheckbox.dispatchEvent(new Event("change"));
 
-		// Focus body for data methods
 		setTimeout(() => document.getElementById("body").focus(), 100);
 	}
 });
 
-// Auto-save feature (in memory only)
 function autoSave() {
 	const state = {
 		method: document.getElementById("method").value,
@@ -438,7 +408,6 @@ function autoSave() {
 		customHeaders: [],
 	};
 
-	// Save preset headers
 	document.querySelectorAll(".header-checkbox").forEach((checkbox) => {
 		const input = checkbox.parentElement.querySelector(".header-value");
 		const headerName = input.getAttribute("data-header");
@@ -448,7 +417,6 @@ function autoSave() {
 		};
 	});
 
-	// Save custom headers
 	document.querySelectorAll(".custom-header").forEach((row) => {
 		const inputs = row.querySelectorAll("input");
 		state.customHeaders.push({
@@ -457,24 +425,19 @@ function autoSave() {
 		});
 	});
 
-	// Store in memory (since localStorage isn't available)
 	window.currentState = state;
 }
 
-// Auto-save every 2 seconds
 setInterval(autoSave, 2000);
 
-// Initialize everything
 document.addEventListener("DOMContentLoaded", () => {
 	initResizers();
 
-	// Show shortcuts hint
 	setTimeout(() => {
 		toggleShortcuts();
 	}, 1000);
 });
 
-// Focus URL input on load
 window.addEventListener("load", () => {
 	document.getElementById("url").focus();
 });
