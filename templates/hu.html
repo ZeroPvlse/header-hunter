@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>HTTP Tool - Bug Bounty Edition</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: "SF Mono", "Monaco", "Inconsolata", monospace;
+				background: #0d1117;
+				color: #e6edf3;
+				font-size: 13px;
+				line-height: 1.4;
+				height: 100vh;
+				overflow: hidden;
+			}
+
+			.container {
+				height: 100vh;
+				display: flex;
+				flex-direction: column;
+				padding: 12px;
+				gap: 12px;
+			}
+
+			.header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 8px 16px;
+				background: linear-gradient(135deg, #1f2937, #374151);
+				border: 1px solid #374151;
+				border-radius: 8px;
+				flex-shrink: 0;
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+			}
+
+			.header h1 {
+				font-size: 16px;
+				font-weight: 600;
+				color: #f0f6fc;
+				text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+			}
+
+			.status {
+				font-size: 11px;
+				color: #7d8590;
+				transition: all 0.3s ease;
+				padding: 4px 8px;
+				border-radius: 4px;
+				background: rgba(125, 133, 144, 0.1);
+			}
+
+			.main {
+				display: flex;
+				gap: 8px;
+				flex: 1;
+				min-height: 0;
+				position: relative;
+			}
+
+			.panel {
+				background: linear-gradient(145deg, #1c2128, #21262d);
+				border: 1px solid #30363d;
+				border-radius: 8px;
+				display: flex;
+				flex-direction: column;
+				min-height: 0;
+				transition: all 0.2s ease;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+				position: relative;
+			}
+
+			.panel:hover {
+				border-color: #58a6ff;
+				box-shadow: 0 4px 16px rgba(88, 166, 255, 0.1);
+			}
+
+			.request-panel {
+				flex: 1.2;
+				min-width: 300px;
+			}
+
+			.headers-panel {
+				flex: 1;
+				min-width: 280px;
+			}
+
+			.response-panel {
+				flex: 1.5;
+				min-width: 350px;
+			}
+
+			.resizer {
+				width: 4px;
+				cursor: col-resize;
+				background: #21262d;
+				transition: background-color 0.2s ease;
+				position: relative;
+			}
+
+			.resizer:hover {
+				background: #58a6ff;
+			}
+
+			.resizer::before {
+				content: "";
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				width: 2px;
+				height: 20px;
+				background: #7d8590;
+				border-radius: 1px;
+			}
+
+			.panel-title {
+				font-size: 12px;
+				color: #f0f6fc;
+				padding: 12px 16px 8px;
+				text-transform: uppercase;
+				letter-spacing: 0.8px;
+				font-weight: 600;
+				flex-shrink: 0;
+				background: linear-gradient(
+					90deg,
+					rgba(88, 166, 255, 0.1),
+					transparent
+				);
+			}
+
+			.panel-content {
+				flex: 1;
+				padding: 0 16px 16px;
+				min-height: 0;
+				display: flex;
+				flex-direction: column;
+			}
+
+			.url-bar {
+				display: flex;
+				gap: 8px;
+				margin-bottom: 12px;
+				align-items: stretch;
+			}
+
+			.method-select {
+				background: linear-gradient(145deg, #21262d, #1c2128);
+				border: 1px solid #30363d;
+				color: #e6edf3;
+				padding: 8px 12px;
+				border-radius: 6px;
+				font-family: inherit;
+				font-size: 12px;
+				font-weight: 600;
+				min-width: 90px;
+				transition: all 0.2s ease;
+				cursor: pointer;
+			}
+
+			.method-select:focus {
+				outline: none;
+				border-color: #58a6ff;
+				box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+			}
+
+			.url-input {
+				flex: 1;
+				background: linear-gradient(145deg, #0d1117, #161b22);
+				border: 1px solid #30363d;
+				color: #e6edf3;
+				padding: 8px 12px;
+				border-radius: 6px;
+				font-family: inherit;
+				font-size: 12px;
+				transition: all 0.2s ease;
+			}
+
+			.url-input:focus {
+				outline: none;
+				border-color: #58a6ff;
+				box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+				background: #0d1117;
+			}
+
+			.send-btn {
+				background: linear-gradient(135deg, #238636, #2ea043);
+				border: none;
+				color: white;
+				padding: 8px 20px;
+				border-radius: 6px;
+				cursor: pointer;
+				font-family: inherit;
+				font-size: 12px;
+				font-weight: 600;
+				transition: all 0.2s ease;
+				box-shadow: 0 3px 6px rgba(35, 134, 54, 0.3);
+				min-width: 80px;
+			}
+
+			.send-btn:hover {
+				background: linear-gradient(135deg, #2ea043, #238636);
+				transform: translateY(-1px);
+				box-shadow: 0 4px 12px rgba(35, 134, 54, 0.4);
+			}
+
+			.send-btn:active {
+				transform: translateY(0);
+			}
+
+			.body-input {
+				width: 100%;
+				flex: 1;
+				background: linear-gradient(145deg, #0d1117, #161b22);
+				border: 1px solid #30363d;
+				color: #e6edf3;
+				padding: 12px;
+				border-radius: 6px;
+				font-family: inherit;
+				font-size: 12px;
+				resize: none;
+				transition: all 0.2s ease;
+				min-height: 120px;
+			}
+
+			.body-input:focus {
+				outline: none;
+				border-color: #58a6ff;
+				box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+				background: #0d1117;
+			}
+
+			.headers-content {
+				flex: 1;
+				display: flex;
+				flex-direction: column;
+				min-height: 0;
+			}
+
+			.headers-tabs {
+				display: flex;
+				margin-bottom: 8px;
+				flex-shrink: 0;
+				border-bottom: 1px solid #30363d;
+			}
+
+			.header-tab {
+				background: none;
+				border: none;
+				color: #7d8590;
+				padding: 8px 16px;
+				cursor: pointer;
+				font-family: inherit;
+				font-size: 11px;
+				font-weight: 500;
+				transition: all 0.2s ease;
+				position: relative;
+			}
+
+			.header-tab.active {
+				color: #58a6ff;
+			}
+
+			.header-tab.active::after {
+				content: "";
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				height: 2px;
+				background: #58a6ff;
+				border-radius: 1px;
+			}
+
+			.header-tab:hover:not(.active) {
+				color: #e6edf3;
+			}
+
+			.headers-panel-content {
+				flex: 1;
+				overflow-y: auto;
+				background: linear-gradient(145deg, #0d1117, #161b22);
+				border-radius: 6px;
+				padding: 12px;
+				min-height: 0;
+				border: 1px solid #30363d;
+			}
+
+			.headers-panel-content:not(.active) {
+				display: none;
+			}
+
+			.quick-actions {
+				display: flex;
+				gap: 6px;
+				margin-bottom: 12px;
+				flex-wrap: wrap;
+			}
+
+			.quick-btn {
+				background: linear-gradient(145deg, #21262d, #1c2128);
+				border: 1px solid #30363d;
+				color: #e6edf3;
+				padding: 4px 8px;
+				border-radius: 4px;
+				cursor: pointer;
+				font-family: inherit;
+				font-size: 9px;
+				font-weight: 500;
+				transition: all 0.2s ease;
+			}
+
+			.quick-btn:hover {
+				background: linear-gradient(145deg, #30363d, #21262d);
+				border-color: #58a6ff;
+				transform: translateY(-1px);
+			}
+
+			.header-item {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				margin-bottom: 6px;
+				padding: 4px 6px;
+				border-radius: 4px;
+				transition: background-color 0.2s ease;
+			}
+
+			.header-item:hover {
+				background: rgba(88, 166, 255, 0.05);
+			}
+
+			.header-checkbox {
+				width: 14px;
+				height: 14px;
+				accent-color: #58a6ff;
+				flex-shrink: 0;
+				cursor: pointer;
+			}
+
+			.header-name {
+				font-size: 10px;
+				color: #f0f6fc;
+				min-width: 100px;
+				cursor: pointer;
+				flex-shrink: 0;
+				font-weight: 500;
+			}
+
+			.header-value {
+				flex: 1;
+				background: linear-gradient(145deg, #161b22, #0d1117);
+				border: 1px solid #30363d;
+				color: #e6edf3;
+				font-family: inherit;
+				font-size: 10px;
+				padding: 4px 6px;
+				border-radius: 3px;
+				transition: all 0.2s ease;
+			}
+
+			.header-value:focus {
+				outline: none;
+				border-color: #58a6ff;
+				box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+				background: #0d1117;
+			}
+
+			.header-value:disabled {
+				color: #30363d;
+				background: transparent;
+				border-color: #21262d;
+			}
+
+			.custom-header {
+				display: grid;
+				grid-template-columns: 110px 1fr 24px;
+				gap: 6px;
+				margin-bottom: 6px;
+				align-items: center;
+			}
+
+			.custom-header input {
+				background: linear-gradient(145deg, #161b22, #0d1117);
+				border: 1px solid #30363d;
+				color: #e6edf3;
+				padding: 4px 6px;
+				border-radius: 3px;
+				font-family: inherit;
+				font-size: 10px;
+				transition: all 0.2s ease;
+			}
+
+			.custom-header input:focus {
+				outline: none;
+				border-color: #58a6ff;
+				box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+			}
+
+			.remove-btn {
+				background: #da3633;
+				border: none;
+				color: white;
+				width: 20px;
+				height: 20px;
+				border-radius: 3px;
+				cursor: pointer;
+				font-size: 12px;
+				font-weight: bold;
+				transition: all 0.2s ease;
+			}
+
+			.remove-btn:hover {
+				background: #f85149;
+				transform: scale(1.1);
+			}
+
+			.add-custom {
+				background: none;
+				border: 1px dashed #30363d;
+				color: #7d8590;
+				padding: 8px;
+				border-radius: 4px;
+				cursor: pointer;
+				font-family: inherit;
+				font-size: 10px;
+				font-weight: 500;
+				margin-top: 8px;
+				width: 100%;
+				transition: all 0.2s ease;
+			}
+
+			.add-custom:hover {
+				border-color: #58a6ff;
+				color: #58a6ff;
+				background: rgba(88, 166, 255, 0.05);
+			}
+
+			.response-header {
+				display: flex;
+				background: linear-gradient(90deg, #21262d, #1c2128);
+				border-bottom: 1px solid #30363d;
+				border-radius: 8px 8px 0 0;
+				flex-shrink: 0;
+			}
+
+			.tab {
+				padding: 10px 16px;
+				border: none;
+				background: none;
+				color: #7d8590;
+				cursor: pointer;
+				font-family: inherit;
+				font-size: 11px;
+				font-weight: 500;
+				border-right: 1px solid #30363d;
+				transition: all 0.2s ease;
+				position: relative;
+			}
+
+			.tab.active {
+				color: #e6edf3;
+				background: rgba(88, 166, 255, 0.1);
+			}
+
+			.tab.active::after {
+				content: "";
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				height: 2px;
+				background: #58a6ff;
+			}
+
+			.tab:hover:not(.active) {
+				color: #e6edf3;
+				background: rgba(255, 255, 255, 0.03);
+			}
+
+			.response-content {
+				padding: 16px;
+				flex: 1;
+				overflow-y: auto;
+				font-family: inherit;
+				font-size: 11px;
+				line-height: 1.4;
+				min-height: 0;
+				background: linear-gradient(145deg, #0d1117, #161b22);
+			}
+
+			.response-status {
+				margin-bottom: 12px;
+				font-size: 11px;
+				padding: 6px 12px;
+				border-radius: 4px;
+				display: inline-block;
+				font-weight: 600;
+			}
+
+			.status-200 {
+				color: #238636;
+				background: rgba(35, 134, 54, 0.15);
+				border: 1px solid rgba(35, 134, 54, 0.3);
+			}
+			.status-400 {
+				color: #d29922;
+				background: rgba(210, 153, 34, 0.15);
+				border: 1px solid rgba(210, 153, 34, 0.3);
+			}
+			.status-500 {
+				color: #f85149;
+				background: rgba(248, 81, 73, 0.15);
+				border: 1px solid rgba(248, 81, 73, 0.3);
+			}
+
+			pre {
+				white-space: pre-wrap;
+				word-break: break-word;
+				margin: 0;
+				color: #e6edf3;
+				background: linear-gradient(145deg, #161b22, #0d1117);
+				padding: 12px;
+				border-radius: 4px;
+				border: 1px solid #30363d;
+				font-size: 10px;
+			}
+
+			.header-line {
+				margin-bottom: 3px;
+				padding: 2px 0;
+			}
+
+			.header-name-resp {
+				color: #79c0ff;
+				font-weight: 600;
+			}
+
+			.keyboard-shortcuts {
+				position: fixed;
+				bottom: 12px;
+				right: 12px;
+				background: rgba(13, 17, 23, 0.95);
+				border: 1px solid #30363d;
+				border-radius: 6px;
+				padding: 8px 12px;
+				font-size: 9px;
+				color: #7d8590;
+				opacity: 0;
+				transition: opacity 0.3s ease;
+				pointer-events: none;
+				backdrop-filter: blur(8px);
+			}
+
+			.keyboard-shortcuts.show {
+				opacity: 1;
+			}
+
+			.shortcut {
+				display: flex;
+				justify-content: space-between;
+				margin-bottom: 2px;
+			}
+
+			.shortcut:last-child {
+				margin-bottom: 0;
+			}
+
+			.key {
+				background: #21262d;
+				padding: 1px 4px;
+				border-radius: 2px;
+				margin-left: 8px;
+				font-weight: 500;
+			}
+
+			@keyframes pulse {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.7;
+				}
+			}
+
+			.sending {
+				animation: pulse 1s infinite;
+			}
+
+			@keyframes slideIn {
+				from {
+					opacity: 0;
+					transform: translateY(-10px);
+				}
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+
+			.panel {
+				animation: slideIn 0.3s ease-out;
+			}
+
+			/* Scrollbar styling */
+			::-webkit-scrollbar {
+				width: 6px;
+			}
+
+			::-webkit-scrollbar-track {
+				background: #161b22;
+			}
+
+			::-webkit-scrollbar-thumb {
+				background: #30363d;
+				border-radius: 3px;
+			}
+
+			::-webkit-scrollbar-thumb:hover {
+				background: #484f58;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<h1>HTTP Tool - Bug Bounty Edition</h1>
+				<div class="status" id="status">
+					Ready • Press ? for shortcuts
+				</div>
+			</div>
+
+			<div class="main">
+				<div class="panel request-panel" data-panel="request">
+					<div class="panel-title">Request</div>
+					<div class="panel-content">
+						<div class="url-bar">
+							<select class="method-select" id="method">
+								<option>GET</option>
+								<option>POST</option>
+								<option>PUT</option>
+								<option>DELETE</option>
+								<option>PATCH</option>
+								<option>HEAD</option>
+								<option>OPTIONS</option>
+							</select>
+							<input
+								type="text"
+								class="url-input"
+								id="url"
+								placeholder="https://target.com/endpoint"
+								value="https://httpbin.org/get"
+							/>
+							<button class="send-btn" onclick="sendRequest()">
+								Send
+							</button>
+						</div>
+						<textarea
+							class="body-input"
+							id="body"
+							placeholder="Request body (JSON, XML, form data, etc.)&#10;&#10;Tip: Use Ctrl+Enter to send request quickly"
+						></textarea>
+					</div>
+				</div>
+
+				<div class="resizer" data-resizer="1"></div>
+
+				<div class="resizer" data-resizer="2"></div>
+
+				<div class="panel response-panel" data-panel="response">
+					<div class="response-header">
+						<button
+							class="tab active"
+							onclick="showTab(this, 'body')"
+						>
+							Response
+						</button>
+						<button class="tab" onclick="showTab(this, 'headers')">
+							Headers
+						</button>
+						<button class="tab" onclick="showTab(this, 'raw')">
+							Raw
+						</button>
+						<button class="tab" onclick="showTab(this, 'timeline')">
+							Timeline
+						</button>
+					</div>
+					<div class="response-content" id="response-content">
+						<div
+							style="
+								color: #7d8590;
+								text-align: center;
+								padding: 40px;
+							"
+						>
+							🎯 Ready to hunt bugs!<br />
+							Send a request to see the response<br /><br />
+							<small
+								>Tip: Use Ctrl+Enter for quick requests</small
+							>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="keyboard-shortcuts" id="shortcuts">
+			<div class="shortcut">
+				<span>Send Request</span><span class="key">Ctrl+Enter</span>
+			</div>
+			<div class="shortcut">
+				<span>Toggle Shortcuts</span><span class="key">?</span>
+			</div>
+			<div class="shortcut">
+				<span>Focus URL</span><span class="key">Ctrl+L</span>
+			</div>
+			<div class="shortcut">
+				<span>Focus Body</span><span class="key">Ctrl+B</span>
+			</div>
+			<div class="shortcut">
+				<span>Add Header</span><span class="key">Ctrl+H</span>
+			</div>
+			<div class="shortcut">
+				<span>Clear Headers</span><span class="key">Ctrl+Shift+C</span>
+			</div>
+		</div>
+
+		<script>
+			let currentTab = "body";
+			let currentHeaderTab = "preset";
+			let lastResponse = null;
+			let isResizing = false;
+			let startX = 0;
+			let startWidths = [];
+
+			// Initialize resizable panels
+			function initResizers() {
+				const resizers = document.querySelectorAll(".resizer");
+				const panels = document.querySelectorAll(".panel");
+
+				resizers.forEach((resizer, index) => {
+					resizer.addEventListener("mousedown", (e) => {
+						isResizing = true;
+						startX = e.clientX;
+						startWidths = Array.from(panels).map(
+							(panel) => panel.getBoundingClientRect().width
+						);
+						document.body.style.cursor = "col-resize";
+						document.body.style.userSelect = "none";
+					});
+				});
+
+				document.addEventListener("mousemove", (e) => {
+					if (!isResizing) return;
+
+					const deltaX = e.clientX - startX;
+					const container = document.querySelector(".main");
+					const containerWidth =
+						container.getBoundingClientRect().width;
+
+					// Simple 3-panel resize logic
+					const leftPanel = panels[0];
+					const middlePanel = panels[1];
+					const rightPanel = panels[2];
+
+					const leftWidth = Math.max(
+						250,
+						Math.min(containerWidth * 0.6, startWidths[0] + deltaX)
+					);
+					const rightWidth = Math.max(300, startWidths[2] - deltaX);
+					const middleWidth =
+						containerWidth - leftWidth - rightWidth - 16; // Account for gaps
+
+					if (middleWidth > 200) {
+						leftPanel.style.flex = `0 0 ${leftWidth}px`;
+						middlePanel.style.flex = `0 0 ${middleWidth}px`;
+						rightPanel.style.flex = `0 0 ${rightWidth}px`;
+					}
+				});
+
+				document.addEventListener("mouseup", () => {
+					if (isResizing) {
+						isResizing = false;
+						document.body.style.cursor = "";
+						document.body.style.userSelect = "";
+					}
+				});
+			}
+
+			// Keyboard shortcuts
+			document.addEventListener("keydown", (e) => {
+				// Ctrl+Enter: Send request
+				if (e.ctrlKey && e.key === "Enter") {
+					e.preventDefault();
+					sendRequest();
+				}
+				// Ctrl+L: Focus URL
+				else if (e.ctrlKey && e.key === "l") {
+					e.preventDefault();
+					document.getElementById("url").focus();
+					document.getElementById("url").select();
+				}
+				// Ctrl+B: Focus body
+				else if (e.ctrlKey && e.key === "b") {
+					e.preventDefault();
+					document.getElementById("body").focus();
+				}
+				// Ctrl+H: Add custom header
+				else if (e.ctrlKey && e.key === "h") {
+					e.preventDefault();
+					showHeaderTab(
+						document.querySelector(".header-tab:nth-child(2)"),
+						"custom"
+					);
+					addCustomHeader();
+				}
+				// Ctrl+Shift+C: Clear all headers
+				else if (e.ctrlKey && e.shiftKey && e.key === "C") {
+					e.preventDefault();
+					clearAllHeaders();
+				}
+				// ?: Show shortcuts
+				else if (
+					e.key === "?" &&
+					!e.ctrlKey &&
+					!e.shiftKey &&
+					!e.altKey
+				) {
+					e.preventDefault();
+					toggleShortcuts();
+				}
+			});
+
+			function toggleShortcuts() {
+				const shortcuts = document.getElementById("shortcuts");
+				shortcuts.classList.toggle("show");
+				setTimeout(() => {
+					if (shortcuts.classList.contains("show")) {
+						shortcuts.classList.remove("show");
+					}
+				}, 3000);
+			}
+
+			// Header tab switching
+			function showHeaderTab(tab, type) {
+				document
+					.querySelectorAll(".header-tab")
+					.forEach((t) => t.classList.remove("active"));
+				document
+					.querySelectorAll(".headers-panel-content")
+					.forEach((p) => p.classList.remove("active"));
+
+				tab.classList.add("active");
+				document
+					.getElementById(type + "-panel")
+					.classList.add("active");
+				currentHeaderTab = type;
+			}
+
+			// Custom headers
+			function addCustomHeader() {
+				const container = document.getElementById(
+					"custom-headers-container"
+				);
+				const headerDiv = document.createElement("div");
+				headerDiv.className = "custom-header";
+				headerDiv.innerHTML = `
+                <input type="text" placeholder="Header Name" onkeydown="if(event.key==='Tab'){event.preventDefault();this.nextElementSibling.focus()}">
+                <input type="text" placeholder="Header Value" onkeydown="if(event.key==='Enter'){addCustomHeader()}">
+                <button class="remove-btn" onclick="removeCustomHeader(this)" title="Remove header">×</button>
+            `;
+				container.appendChild(headerDiv);
+
+				// Focus the first input
+				headerDiv.querySelector("input").focus();
+			}
+
+			function removeCustomHeader(btn) {
+				btn.parentElement.remove();
+			}
+
+			// Preset header management
+			document
+				.querySelectorAll(".header-checkbox")
+				.forEach((checkbox) => {
+					checkbox.addEventListener("change", (e) => {
+						const input =
+							e.target.parentElement.querySelector(
+								".header-value"
+							);
+						input.disabled = !e.target.checked;
+						if (e.target.checked) {
+							input.focus();
+							input.select();
+						}
+					});
+				});
+
+			document.querySelectorAll(".header-name").forEach((label) => {
+				label.addEventListener("click", (e) => {
+					const checkbox = document.getElementById(
+						e.target.getAttribute("for")
+					);
+					checkbox.checked = !checkbox.checked;
+					checkbox.dispatchEvent(new Event("change"));
+				});
+			});
+
+			function toggleCategory(category) {
+				const categories = {
+					common: ["user-agent", "accept", "content-type", "referer"],
+					auth: ["authorization", "x-api-key", "cookie"],
+					security: [
+						"x-forwarded-for",
+						"x-real-ip",
+						"x-originating-ip",
+						"x-requested-with",
+					],
+					bypass: ["origin", "host", "x-admin", "x-debug"],
+				};
+
+				const headers = categories[category];
+				if (!headers) return;
+
+				const allChecked = headers.every((id) => {
+					const el = document.getElementById(id);
+					return el && el.checked;
+				});
+
+				headers.forEach((id) => {
+					const checkbox = document.getElementById(id);
+					if (checkbox) {
+						checkbox.checked = !allChecked;
+						checkbox.dispatchEvent(new Event("change"));
+					}
+				});
+			}
+
+			function clearAllHeaders() {
+				document
+					.querySelectorAll(".header-checkbox")
+					.forEach((checkbox) => {
+						checkbox.checked = false;
+						checkbox.dispatchEvent(new Event("change"));
+					});
+
+				// Clear custom headers
+				document.getElementById("custom-headers-container").innerHTML =
+					"";
+			}
+
+			function showTab(tab, type) {
+				document
+					.querySelectorAll(".tab")
+					.forEach((t) => t.classList.remove("active"));
+				tab.classList.add("active");
+				currentTab = type;
+				updateResponseDisplay();
+			}
+
+			async function sendRequest() {
+				const method = document.getElementById("method").value;
+				const url = document.getElementById("url").value.trim();
+				const body = document.getElementById("body").value;
+				const statusEl = document.getElementById("status");
+				const sendBtn = document.querySelector(".send-btn");
+
+				if (!url) {
+					statusEl.textContent = "Error: URL is required";
+					statusEl.style.color = "#f85149";
+					return;
+				}
+
+				const headers = {};
+
+				// Collect preset headers
+				document
+					.querySelectorAll(".header-checkbox:checked")
+					.forEach((checkbox) => {
+						const input =
+							checkbox.parentElement.querySelector(
+								".header-value"
+							);
+						const headerName = input.getAttribute("data-header");
+						const headerValue = input.value.trim();
+						if (headerName && headerValue) {
+							headers[headerName] = headerValue;
+						}
+					});
+
+				// Collect custom headers
+				document.querySelectorAll(".custom-header").forEach((row) => {
+					const inputs = row.querySelectorAll("input");
+					const name = inputs[0].value.trim();
+					const value = inputs[1].value.trim();
+					if (name && value) {
+						headers[name] = value;
+					}
+				});
+
+				statusEl.textContent = "Sending request...";
+				statusEl.style.color = "#d29922";
+				statusEl.classList.add("sending");
+				sendBtn.textContent = "Sending...";
+				sendBtn.disabled = true;
+
+				const startTime = Date.now();
+				try {
+					const options = {
+						method,
+						headers,
+						mode: "cors",
+					};
+
+					if (body && ["POST", "PUT", "PATCH"].includes(method)) {
+						options.body = body;
+					}
+
+					const response = await fetch(url, options);
+					const responseText = await response.text();
+					const duration = Date.now() - startTime;
+
+					lastResponse = {
+						status: response.status,
+						statusText: response.statusText,
+						headers: Object.fromEntries(response.headers.entries()),
+						body: responseText,
+						duration,
+						url,
+						method,
+						requestHeaders: headers,
+						timestamp: new Date().toISOString(),
+					};
+
+					statusEl.textContent = `${response.status} ${response.statusText} • ${duration}ms • ${responseText.length} bytes`;
+					statusEl.style.color =
+						response.status >= 400 ? "#f85149" : "#238636";
+					updateResponseDisplay();
+				} catch (error) {
+					const duration = Date.now() - startTime;
+					statusEl.textContent = `Error: ${error.message}`;
+					statusEl.style.color = "#f85149";
+
+					lastResponse = {
+						status: 0,
+						statusText: "Network Error",
+						headers: {},
+						body: error.message,
+						duration,
+						url,
+						method,
+						requestHeaders: headers,
+						timestamp: new Date().toISOString(),
+					};
+					updateResponseDisplay();
+				} finally {
+					statusEl.classList.remove("sending");
+					sendBtn.textContent = "Send";
+					sendBtn.disabled = false;
+				}
+			}
+
+			function updateResponseDisplay() {
+				if (!lastResponse) return;
+
+				const content = document.getElementById("response-content");
+				const statusClass =
+					lastResponse.status >= 500
+						? "status-500"
+						: lastResponse.status >= 400
+						? "status-400"
+						: "status-200";
+
+				switch (currentTab) {
+					case "body":
+						let bodyContent = lastResponse.body;
+						let contentType = "";
+
+						try {
+							const parsed = JSON.parse(bodyContent);
+							bodyContent = JSON.stringify(parsed, null, 2);
+							contentType = " (JSON)";
+						} catch {
+							try {
+								// Try to detect XML
+								if (bodyContent.trim().startsWith("<")) {
+									contentType = " (XML/HTML)";
+								}
+							} catch {}
+						}
+
+						content.innerHTML = `
+                        <div class="response-status ${statusClass}">
+                            ${lastResponse.status} ${lastResponse.statusText} • ${lastResponse.duration}ms • ${lastResponse.body.length} bytes${contentType}
+                        </div>
+                        <pre>${bodyContent}</pre>
+                    `;
+						break;
+
+					case "headers":
+						content.innerHTML = `
+                        <div class="response-status ${statusClass}">
+                            ${lastResponse.status} ${
+							lastResponse.statusText
+						} • ${Object.keys(lastResponse.headers).length} headers
+                        </div>
+                        ${Object.entries(lastResponse.headers)
+							.map(
+								([k, v]) =>
+									`<div class="header-line"><span class="header-name-resp">${k}:</span> ${v}</div>`
+							)
+							.join("")}
+                    `;
+						break;
+
+					case "raw":
+						const rawResponse =
+							`${lastResponse.method} ${lastResponse.url}\n` +
+							Object.entries(lastResponse.requestHeaders)
+								.map(([k, v]) => `${k}: ${v}`)
+								.join("\n") +
+							"\n\n" +
+							`HTTP/1.1 ${lastResponse.status} ${lastResponse.statusText}\n` +
+							Object.entries(lastResponse.headers)
+								.map(([k, v]) => `${k}: ${v}`)
+								.join("\n") +
+							"\n\n" +
+							lastResponse.body;
+
+						content.innerHTML = `<pre>${rawResponse}</pre>`;
+						break;
+
+					case "timeline":
+						content.innerHTML = `
+                        <div class="response-status ${statusClass}">
+                            Request Timeline
+                        </div>
+                        <div class="header-line">🕐 <span class="header-name-resp">Timestamp:</span> ${new Date(
+							lastResponse.timestamp
+						).toLocaleString()}</div>
+                        <div class="header-line">🚀 <span class="header-name-resp">Method:</span> ${
+							lastResponse.method
+						}</div>
+                        <div class="header-line">🔗 <span class="header-name-resp">URL:</span> ${
+							lastResponse.url
+						}</div>
+                        <div class="header-line">⏱️ <span class="header-name-resp">Duration:</span> ${
+							lastResponse.duration
+						}ms</div>
+                        <div class="header-line">📊 <span class="header-name-resp">Status:</span> ${
+							lastResponse.status
+						} ${lastResponse.statusText}</div>
+                        <div class="header-line">📏 <span class="header-name-resp">Response Size:</span> ${
+							lastResponse.body.length
+						} bytes</div>
+                        <div class="header-line">📋 <span class="header-name-resp">Request Headers:</span> ${
+							Object.keys(lastResponse.requestHeaders).length
+						}</div>
+                        <div class="header-line">📥 <span class="header-name-resp">Response Headers:</span> ${
+							Object.keys(lastResponse.headers).length
+						}</div>
+                    `;
+						break;
+				}
+			}
+
+			// Method change handler
+			document
+				.getElementById("method")
+				.addEventListener("change", (e) => {
+					const method = e.target.value;
+					const contentTypeCheckbox =
+						document.getElementById("content-type");
+					const acceptCheckbox = document.getElementById("accept");
+
+					if (["POST", "PUT", "PATCH"].includes(method)) {
+						contentTypeCheckbox.checked = true;
+						acceptCheckbox.checked = true;
+						contentTypeCheckbox.dispatchEvent(new Event("change"));
+						acceptCheckbox.dispatchEvent(new Event("change"));
+
+						// Focus body for data methods
+						setTimeout(
+							() => document.getElementById("body").focus(),
+							100
+						);
+					}
+				});
+
+			// Auto-save feature (in memory only)
+			function autoSave() {
+				const state = {
+					method: document.getElementById("method").value,
+					url: document.getElementById("url").value,
+					body: document.getElementById("body").value,
+					presetHeaders: {},
+					customHeaders: [],
+				};
+
+				// Save preset headers
+				document
+					.querySelectorAll(".header-checkbox")
+					.forEach((checkbox) => {
+						const input =
+							checkbox.parentElement.querySelector(
+								".header-value"
+							);
+						const headerName = input.getAttribute("data-header");
+						state.presetHeaders[headerName] = {
+							checked: checkbox.checked,
+							value: input.value,
+						};
+					});
+
+				// Save custom headers
+				document.querySelectorAll(".custom-header").forEach((row) => {
+					const inputs = row.querySelectorAll("input");
+					state.customHeaders.push({
+						name: inputs[0].value,
+						value: inputs[1].value,
+					});
+				});
+
+				// Store in memory (since localStorage isn't available)
+				window.currentState = state;
+			}
+
+			// Auto-save every 2 seconds
+			setInterval(autoSave, 2000);
+
+			// Initialize everything
+			document.addEventListener("DOMContentLoaded", () => {
+				initResizers();
+
+				// Show shortcuts hint
+				setTimeout(() => {
+					toggleShortcuts();
+				}, 1000);
+			});
+
+			// Focus URL input on load
+			window.addEventListener("load", () => {
+				document.getElementById("url").focus();
+			});
+		</script>
+	</body>
+</html>

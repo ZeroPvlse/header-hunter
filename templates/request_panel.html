@@ -1,0 +1,29 @@
+<div class="panel request-panel" data-panel="request">
+	<div class="panel-title">Request</div>
+	<div class="panel-content">
+		<div class="url-bar">
+			<select class="method-select" id="method">
+				<option>GET</option>
+				<option>POST</option>
+				<option>PUT</option>
+				<option>DELETE</option>
+				<option>PATCH</option>
+				<option>HEAD</option>
+				<option>OPTIONS</option>
+			</select>
+			<input
+				type="text"
+				class="url-input"
+				id="url"
+				placeholder="https://target.com/endpoint"
+				value="https://httpbin.org/get"
+			/>
+			<button class="send-btn" onclick="sendRequest()">Send</button>
+		</div>
+		<textarea
+			class="body-input"
+			id="body"
+			placeholder="Request body (JSON, XML, form data, etc.)&#10;&#10;Tip: Use Ctrl+Enter to send request quickly"
+		></textarea>
+	</div>
+</div>

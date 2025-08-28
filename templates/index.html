@@ -1,0 +1,35 @@
+{% extends "base.html" %} {% block body %}
+<div class="container">
+	<div class="header">
+		<h1>HTTP Tool - Bug Bounty Edition</h1>
+		<div class="status" id="status">Ready • Press ? for shortcuts</div>
+	</div>
+	<div class="main">
+		{% include "request_panel.html" %}
+		<div class="resizer" data-resizer="1"></div>
+		{% include "headers_panel.html" %}
+		<div class="resizer" data-resizer="2"></div>
+		{% include "response_panel.html" %}
+	</div>
+</div>
+<div class="keyboard-shortcuts" id="shortcuts">
+	<div class="shortcut">
+		<span>Send Request</span><span class="key">Ctrl+Enter</span>
+	</div>
+	<div class="shortcut">
+		<span>Toggle Shortcuts</span><span class="key">?</span>
+	</div>
+	<div class="shortcut">
+		<span>Focus URL</span><span class="key">Ctrl+L</span>
+	</div>
+	<div class="shortcut">
+		<span>Focus Body</span><span class="key">Ctrl+B</span>
+	</div>
+	<div class="shortcut">
+		<span>Add Header</span><span class="key">Ctrl+H</span>
+	</div>
+	<div class="shortcut">
+		<span>Clear Headers</span><span class="key">Ctrl+Shift+C</span>
+	</div>
+</div>
+{% endblock %}

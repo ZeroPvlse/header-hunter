@@ -1,0 +1,291 @@
+<div class="panel headers-panel" data-panel="headers">
+	<div class="panel-title">📋 Headers & Payloads</div>
+	<div class="panel-content">
+		<div class="headers-content">
+			<div class="headers-tabs">
+				<button
+					class="header-tab active"
+					onclick="showHeaderTab(this, 'preset')"
+				>
+					Preset
+				</button>
+				<button
+					class="header-tab"
+					onclick="showHeaderTab(this, 'custom')"
+				>
+					Custom
+				</button>
+			</div>
+
+			<div class="headers-panel-content active" id="preset-panel">
+				<div class="quick-actions">
+					<button
+						class="quick-btn"
+						onclick="toggleCategory('common')"
+					>
+						Common
+					</button>
+					<button class="quick-btn" onclick="toggleCategory('auth')">
+						Auth
+					</button>
+					<button
+						class="quick-btn"
+						onclick="toggleCategory('security')"
+					>
+						Security
+					</button>
+					<button
+						class="quick-btn"
+						onclick="toggleCategory('bypass')"
+					>
+						Bypass
+					</button>
+					<button class="quick-btn" onclick="clearAllHeaders()">
+						Clear
+					</button>
+				</div>
+
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="user-agent"
+						checked
+					/>
+					<label class="header-name" for="user-agent"
+						>User-Agent</label
+					>
+					<input
+						type="text"
+						class="header-value"
+						value="Mozilla/5.0 (BugBounty/1.0)"
+						data-header="User-Agent"
+					/>
+				</div>
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="accept"
+					/>
+					<label class="header-name" for="accept">Accept</label>
+					<input
+						type="text"
+						class="header-value"
+						value="application/json, */*"
+						data-header="Accept"
+						disabled
+					/>
+				</div>
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="content-type"
+					/>
+					<label class="header-name" for="content-type"
+						>Content-Type</label
+					>
+					<input
+						type="text"
+						class="header-value"
+						value="application/json"
+						data-header="Content-Type"
+						disabled
+					/>
+				</div>
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="referer"
+					/>
+					<label class="header-name" for="referer">Referer</label>
+					<input
+						type="text"
+						class="header-value"
+						value="https://google.com/"
+						data-header="Referer"
+						disabled
+					/>
+				</div>
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="authorization"
+					/>
+					<label class="header-name" for="authorization"
+						>Authorization</label
+					>
+					<input
+						type="text"
+						class="header-value"
+						value="Bearer eyJ0eXAi..."
+						data-header="Authorization"
+						disabled
+					/>
+				</div>
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="x-api-key"
+					/>
+					<label class="header-name" for="x-api-key">X-API-Key</label>
+					<input
+						type="text"
+						class="header-value"
+						value="sk_live_..."
+						data-header="X-API-Key"
+						disabled
+					/>
+				</div>
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="cookie"
+					/>
+					<label class="header-name" for="cookie">Cookie</label>
+					<input
+						type="text"
+						class="header-value"
+						value="session=abc123; token=xyz789"
+						data-header="Cookie"
+						disabled
+					/>
+				</div>
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="x-forwarded-for"
+					/>
+					<label class="header-name" for="x-forwarded-for"
+						>X-Forwarded-For</label
+					>
+					<input
+						type="text"
+						class="header-value"
+						value="127.0.0.1"
+						data-header="X-Forwarded-For"
+						disabled
+					/>
+				</div>
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="x-real-ip"
+					/>
+					<label class="header-name" for="x-real-ip">X-Real-IP</label>
+					<input
+						type="text"
+						class="header-value"
+						value="192.168.1.1"
+						data-header="X-Real-IP"
+						disabled
+					/>
+				</div>
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="x-originating-ip"
+					/>
+					<label class="header-name" for="x-originating-ip"
+						>X-Originating-IP</label
+					>
+					<input
+						type="text"
+						class="header-value"
+						value="10.0.0.1"
+						data-header="X-Originating-IP"
+						disabled
+					/>
+				</div>
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="x-requested-with"
+					/>
+					<label class="header-name" for="x-requested-with"
+						>X-Requested-With</label
+					>
+					<input
+						type="text"
+						class="header-value"
+						value="XMLHttpRequest"
+						data-header="X-Requested-With"
+						disabled
+					/>
+				</div>
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="origin"
+					/>
+					<label class="header-name" for="origin">Origin</label>
+					<input
+						type="text"
+						class="header-value"
+						value="https://evil.com"
+						data-header="Origin"
+						disabled
+					/>
+				</div>
+				<div class="header-item">
+					<input type="checkbox" class="header-checkbox" id="host" />
+					<label class="header-name" for="host">Host</label>
+					<input
+						type="text"
+						class="header-value"
+						value="admin.target.com"
+						data-header="Host"
+						disabled
+					/>
+				</div>
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="x-admin"
+					/>
+					<label class="header-name" for="x-admin">X-Admin</label>
+					<input
+						type="text"
+						class="header-value"
+						value="true"
+						data-header="X-Admin"
+						disabled
+					/>
+				</div>
+				<div class="header-item">
+					<input
+						type="checkbox"
+						class="header-checkbox"
+						id="x-debug"
+					/>
+					<label class="header-name" for="x-debug">X-Debug</label>
+					<input
+						type="text"
+						class="header-value"
+						value="1"
+						data-header="X-Debug"
+						disabled
+					/>
+				</div>
+			</div>
+
+			<div class="headers-panel-content" id="custom-panel">
+				<div id="custom-headers-container"></div>
+				<button class="add-custom" onclick="addCustomHeader()">
+					+ Add Custom Header
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
