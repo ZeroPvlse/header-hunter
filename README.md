@@ -3,7 +3,7 @@
 **Header Hunter** is a simple, fast, and user-friendly tool for bug bounty hunters and web hackers.  
 It lets you easily craft HTTP requests with custom headers, send them to any web app, and inspect the response—all from a clean local web interface.
 
-## ![Header Hunter Demo](demo/screenshot.jpg)
+## ![Header Hunter Demo](demo/screenshot.png)
 
 ## Features
 
